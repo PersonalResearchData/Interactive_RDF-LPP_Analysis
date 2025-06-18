@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive RDF-LPP Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Interactive RDF-LPP Analysis</h1>
+            <p>Upload molecular simulation files to analyze radial distribution functions and perform LPP (Locality Preserving Projections)</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Upload XYZ Files</h3>
+                <p>Drag and drop multiple .xyz files here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" multiple accept=".xyz">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose Files
+                </button>
+            </div>
+            
+            <div class="file-list" id="fileList"></div>
+
+            <div class="parameters">
+                <div class="param-group">
+                    <label for="rMax">Maximum Distance (r_max)</label>
+                    <input type="number" id="rMax" value="10.0" step="0.1" min="1">
+                </div>
+                <div class="param-group">
+                    <label for="numBins">Number of Bins</label>
+                    <input type="number" id="numBins" value="500" step="10" min="50">
+                </div>
+                <div class="param-group">
+                    <label for="lppComponents">LPP Components</label>
+                    <input type="number" id="lppComponents" value="5" step="1" min="2" max="10">
+                </div>
+                <div class="param-group">
+                    <label for="kNeighbors">k-Neighbors</label>
+                    <input type="number" id="kNeighbors" value="5" step="1" min="2" max="20">
+                </div>
+                <div class="param-group">
+                    <label for="sigma">Heat Kernel σ</label>
+                    <input type="number" id="sigma" value="1.0" step="0.1" min="0.1">
+                </div>
+                <div class="param-group">
+                    <label for="timestepSize">Timestep Size (ps)</label>
+                    <input type="number" id="timestepSize" value="1.0" step="0.1" min="0.1">
+                </div>
+                <div class="param-group">
+                    <label for="averagingWindow">Averaging Window (ps)</label>
+                    <input type="number" id="averagingWindow" value="20.0" step="1.0" min="1.0">
+                </div>
+                <div class="param-group">
+                    <label for="enableAveraging">
+                        <input type="checkbox" id="enableAveraging" style="margin-right: 8px;">
+                        Enable Time Averaging
+                    </label>
+                </div>
+            </div>
+
+            <button class="process-btn" id="processBtn" onclick="processFiles()" disabled>
+                🚀 Process Files
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing molecular data and calculating RDF with LPP...</p>
+        </div>
+
+        <div class="results-section" id="results">
+            <div class="stats-grid" id="statsGrid"></div>
+            
+            <div class="toggle-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">📊 Visualization Controls</h3>
+                <div class="section-info">Select which visualizations to display</div>
+                <div class="section-controls">
+                    <button class="section-toggle active" data-section="rdf">
+                        <span class="icon">📊</span>
+                        <span>All RDFs</span>
+                    </button>
+                    <button class="section-toggle active" data-section="lpp">
+                        <span class="icon">🎯</span>
+                        <span>LPP Plot</span>
+                    </button>
+                    <button class="section-toggle" data-section="selected-rdf">
+                        <span class="icon">🔍</span>
+                        <span>Selected RDF</span>
+                    </button>
+                    <button class="section-toggle active" data-section="eigenvalues">
+                        <span class="icon">📈</span>
+                        <span>Eigenvalues</span>
+                    </button>
+                    <button class="section-toggle active" data-section="nearest-neighbors">
+                        <span class="icon">🌐</span>
+                        <span>Neighbor Graph</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="plot-container plot-section visible" id="rdf-section">
+                <div class="plot-title">📊 Radial Distribution Functions</div>
+                <div id="rdfPlot"></div>
+            </div>
+
+            <div class="plot-container plot-section visible" id="lpp-section">
+                <div class="plot-title">🎯 2D LPP Scatter Plot (Interactive)</div>
+                <p style="color: #666; margin-bottom: 15px; text-align: center;">
+                    💡 Click on any point to view its corresponding RDF below. LPP preserves local neighborhood structure.
+                </p>
+                <div id="lppPlot"></div>
+            </div>
+
+            <div class="plot-container plot-section" id="selected-rdf-section">
+                <div class="plot-title" id="selectedRdfTitle">🔍 Selected RDF</div>
+                <div id="selectedRdfPlot" style="min-height: 400px; border: 2px dashed #e0e0e0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #999;">
+                    Click on a point in the LPP plot above to view its RDF
+                </div>
+            </div>
+
+            <div class="plot-container plot-section visible" id="eigenvalues-section">
+                <div class="plot-title">📈 LPP Eigenvalues</div>
+                <div id="eigenvaluesPlot"></div>
+            </div>
+
+            <div class="plot-container plot-section visible" id="nearest-neighbors-section">
+                <div class="plot-title">🌐 k-Nearest Neighbor Graph</div>
+                <p style="color: #666; margin-bottom: 15px; text-align: center;">
+                    Visualization of the neighborhood graph used in LPP computation
+                </p>
+                <div id="nearestNeighborsPlot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
